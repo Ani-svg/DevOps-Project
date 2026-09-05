@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Granthalaya — Library & Inventory Management</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,340,9..144,440,9..144,560,9..144,680&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root{
+  --bg:#0E1017;
+  --bg-2:#141826;
+  --panel:#1A1E2C;
+  --panel-2:#20243480;
+  --border:rgba(237,234,224,0.09);
+  --border-strong:rgba(237,234,224,0.16);
+  --paper:#F1EBDC;
+  --paper-2:#E7DFC9;
+  --ink:#EDEAE0;
+  --muted:#9BA0B7;
+  --muted-2:#6A6F84;
+  --brass:#C9A227;
+  --brass-bright:#E7C242;
+  --brass-dim:#8A701D;
+  --available:#5DA57F;
+  --issued:#C98A46;
+  --overdue:#C2564A;
+  --shadow-soft: 0 24px 60px -30px rgba(0,0,0,0.6);
+  --radius-card: 4px;
+  --serif: 'Fraunces', serif;
+  --sans: 'Manrope', sans-serif;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important; scroll-behavior:auto !important;}
+}
+a{color:inherit;text-decoration:none;}
+img{max-width:100%;display:block;}
+button{font-family:inherit;cursor:pointer;}
+.container{max-width:1180px;margin:0 auto;padding:0 32px;}
+:focus-visible{outline:2px solid var(--brass-bright); outline-offset:2px;}
+
+/* ---------- Buttons ---------- */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:13px 26px;border-radius:2px;border:1px solid transparent;
+  font-size:14.5px;font-weight:700;letter-spacing:0.01em;
+  transition:transform .18s ease, background .18s ease, border-color .18s ease, color .18s ease;
+  position:relative; overflow:hidden;
+}
+.btn:active{transform:scale(0.97);}
+.btn-brass{background:var(--brass);color:#191400;}
+.btn-brass:hover{background:var(--brass-bright);}
+.btn-ghost{background:transparent;color:var(--ink);border-color:var(--border-strong);}
+.btn-ghost:hover{border-color:var(--brass);color:var(--brass-bright);}
+.btn-paper{background:var(--paper);color:#1c1a12;}
+.btn-paper:hover{background:#fff;}
+.btn-ink{background:#1A1710;color:var(--paper);}
+.btn-ink:hover{background:#000;}
+.btn-block{width:100%;}
+.btn-sm{padding:9px 16px;font-size:13px;}
+
+/* ---------- Header ---------- */
+header{
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  padding:22px 0;
+  transition:background .35s ease, padding .35s ease, border-color .35s ease;
+  border-bottom:1px solid transparent;
+}
+header.scrolled{
+  background:rgba(14,16,23,0.86);
+  backdrop-filter:blur(14px);
+  padding:14px 0;
+  border-bottom:1px solid var(--border);
+}
+.nav-row{display:flex;align-items:center;justify-content:space-between;}
+.brand{display:flex;align-items:baseline;gap:10px;}
+.brand-mark{
+  font-family:var(--serif); font-weight:560; font-size:23px; letter-spacing:0.01em; color:var(--ink);
+}
+.brand-mark span{color:var(--brass-bright);}
+.brand-tag{font-size:11.5px;color:var(--muted-2);font-weight:600;}
+.nav-links{display:flex;align-items:center;gap:34px;}
+.nav-links a{font-size:14px;color:var(--muted);font-weight:600;transition:color .2s;}
+.nav-links a:hover{color:var(--ink);}
+.nav-cta{display:flex;gap:12px;align-items:center;}
+.hamburger{display:none;background:none;border:none;padding:8px;}
+.hamburger span{display:block;width:22px;height:2px;background:var(--ink);margin:5px 0;}
+
+/* ---------- Views ---------- */
+.view{display:none;}
+.view.active{display:block;animation:viewFade .5s ease both;}
+@keyframes viewFade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+
+/* ---------- Hero ---------- */
+.hero{
+  position:relative;padding:186px 0 110px;
+  overflow:hidden;
+}
+.hero-grid{display:grid;grid-template-columns:1.05fr 0.95fr;gap:36px;align-items:center;}
+.hero-eyebrow-line{
+  display:flex;align-items:center;gap:12px;margin-bottom:26px;
+}
+.hero-eyebrow-line .dash-line{width:34px;height:1px;background:var(--brass);}
+.hero-eyebrow-line span{font-size:13.5px;color:var(--muted);font-weight:600;}
+.hero h1{
+  font-family:var(--serif);font-weight:440;font-size:56px;line-height:1.06;
+  letter-spacing:-0.01em;margin:0 0 26px;max-width:610px;
+}
+.hero h1 em{font-style:normal;color:var(--brass-bright);}
+.hero-sub{font-size:17px;line-height:1.65;color:var(--muted);max-width:480px;margin-bottom:38px;}
+.hero-actions{display:flex;gap:16px;margin-bottom:56px;flex-wrap:wrap;}
+.hero-stats{display:flex;gap:44px;}
+.hero-stat b{display:block;font-family:var(--serif);font-size:28px;font-weight:560;color:var(--paper);}
+.hero-stat span{font-size:12.5px;color:var(--muted-2);}
+.hero-canvas-wrap{position:relative;height:480px;}
+#hero-canvas{width:100%;height:100%;}
+.hero-reveal > *{opacity:0;transform:translateY(16px);animation:heroUp .8s cubic-bezier(.2,.7,.2,1) forwards;}
+.hero-reveal > *:nth-child(1){animation-delay:.05s;}
+.hero-reveal > *:nth-child(2){animation-delay:.16s;}
+.hero-reveal > *:nth-child(3){animation-delay:.27s;}
+.hero-reveal > *:nth-child(4){animation-delay:.38s;}
+.hero-reveal > *:nth-child(5){animation-delay:.49s;}
+@keyframes heroUp{to{opacity:1;transform:none;}}
+
+/* ---------- Strip ---------- */
+.strip{border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:22px 0;background:var(--bg-2);}
+.strip-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;color:var(--muted-2);font-size:13px;font-weight:600;}
+.strip-row b{color:var(--muted);}
+
+/* ---------- Section shells ---------- */
+section.reveal-section{padding:120px 0;}
+.section-head{max-width:620px;margin-bottom:56px;}
+.section-head h2{font-family:var(--serif);font-weight:500;font-size:36px;margin:0 0 14px;}
+.section-head p{color:var(--muted);font-size:15.5px;line-height:1.65;margin:0;}
+.fade-in-obs{opacity:0;transform:translateY(14px);transition:opacity .7s ease, transform .7s ease;}
+.fade-in-obs.in{opacity:1;transform:none;}
+
+/* ---------- Feature bento ---------- */
+.bento{display:grid;grid-template-columns:repeat(6,1fr);gap:18px;}
+.bento .card{grid-column:span 2;}
+.bento .card.wide{grid-column:span 3;}
+.bento .card.tall{grid-row:span 1;}
+.card{
+  background:var(--panel);border:1px solid var(--border);padding:28px;
+  transition:border-color .25s ease, transform .25s ease;
+}
+.card:hover{border-color:var(--border-strong);transform:translateY(-3px);}
+.card .icon{width:38px;height:38px;margin-bottom:20px;color:var(--brass-bright);}
+.card h3{font-family:var(--serif);font-weight:500;font-size:19px;margin:0 0 10px;}
+.card p{color:var(--muted);font-size:14px;line-height:1.6;margin:0;}
+
+/* ---------- Workflow ---------- */
+.workflow{display:flex;border:1px solid var(--border);background:var(--panel);}
+.wf-step{flex:1;padding:32px 24px;border-right:1px solid var(--border);position:relative;}
+.wf-step:last-child{border-right:none;}
+.wf-num{font-family:var(--serif);font-size:14px;color:var(--brass-bright);margin-bottom:14px;}
+.wf-step h4{font-size:15px;margin:0 0 8px;font-weight:700;}
+.wf-step p{font-size:13px;color:var(--muted);line-height:1.55;margin:0;}
+
+/* ---------- Institutions ---------- */
+.inst-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+.inst-card{background:var(--panel);border:1px solid var(--border);padding:30px;}
+.inst-card .tag{display:inline-block;font-size:11.5px;font-weight:700;color:var(--brass-bright);border:1px solid var(--brass-dim);padding:4px 10px;margin-bottom:18px;}
+.inst-card h3{font-family:var(--serif);font-size:20px;font-weight:500;margin:0 0 10px;}
+.inst-card p{color:var(--muted);font-size:14px;line-height:1.6;}
+
+/* ---------- CTA band ---------- */
+.cta-band{background:linear-gradient(120deg,#191C29,#12141F);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:90px 0;text-align:center;}
+.cta-band h2{font-family:var(--serif);font-weight:500;font-size:34px;margin:0 0 16px;}
+.cta-band p{color:var(--muted);margin:0 0 34px;}
+
+/* ---------- Footer ---------- */
+footer{padding:60px 0 40px;}
+.foot-row{display:flex;justify-content:space-between;flex-wrap:wrap;gap:30px;border-bottom:1px solid var(--border);padding-bottom:40px;margin-bottom:24px;}
+.foot-col h5{font-size:12.5px;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted-2);margin:0 0 14px;}
+.foot-col a, .foot-col p{display:block;font-size:14px;color:var(--muted);margin-bottom:9px;}
+.foot-bottom{display:flex;justify-content:space-between;color:var(--muted-2);font-size:12.5px;flex-wrap:wrap;gap:10px;}
+
+/* ================= LOGIN ================= */
+.login-wrap{min-height:100vh;display:grid;grid-template-columns:1fr 1fr;}
+.login-art{
+  position:relative;background:radial-gradient(circle at 30% 20%, #232842 0%, #0E1017 65%);
+  display:flex;flex-direction:column;justify-content:space-between;padding:56px;
+  border-right:1px solid var(--border);
+}
+.login-art .brand-mark{font-size:22px;}
+#login-canvas{position:absolute;inset:0;width:100%;height:100%;opacity:0.9;}
+.login-quote{position:relative;font-family:var(--serif);font-size:22px;line-height:1.5;color:var(--paper);max-width:420px;}
+.login-quote span{display:block;margin-top:14px;font-family:var(--sans);font-size:12.5px;color:var(--muted-2);font-weight:700;}
+.login-side{display:flex;align-items:center;justify-content:center;padding:56px;background:var(--paper);}
+.login-card{width:100%;max-width:400px;}
+.login-back{display:inline-flex;align-items:center;gap:6px;color:#6b6550;font-size:13px;font-weight:700;margin-bottom:30px;}
+.login-card h2{font-family:var(--serif);font-weight:560;font-size:29px;color:#1a1810;margin:0 0 8px;}
+.login-card > p{color:#7a745e;font-size:14px;margin:0 0 30px;}
+.role-toggle{display:flex;border:1px solid #d9d0b4;margin-bottom:28px;position:relative;background:#fff;}
+.role-toggle button{
+  flex:1;padding:12px 0;background:none;border:none;font-weight:700;font-size:13.5px;color:#8b8464;z-index:1;transition:color .25s ease;
+}
+.role-toggle button.active{color:#1a1810;}
+.role-toggle .indicator{position:absolute;top:0;bottom:0;width:50%;background:var(--paper-2);left:0;transition:transform .3s cubic-bezier(.3,.7,.3,1);}
+.role-toggle.staff .indicator{transform:translateX(100%);}
+.field{margin-bottom:18px;}
+.field label{display:block;font-size:12.5px;font-weight:700;color:#5f5940;margin-bottom:7px;}
+.field input, .field select{
+  width:100%;padding:12px 14px;border:1px solid #d9d0b4;background:#fff;font-family:inherit;font-size:14px;color:#241f0c;
+  transition:border-color .2s;
+}
+.field input:focus, .field select:focus{border-color:var(--brass);}
+.field-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;}
+.field-row a{font-size:12.5px;color:#8b8464;font-weight:700;}
+.login-note{margin-top:22px;font-size:12px;color:#9b9578;line-height:1.5;}
+.login-panel{display:none;}
+.login-panel.active{display:block;animation:heroUp .4s ease both;}
+
+/* ================= DASHBOARD SHELL ================= */
+.dash{display:grid;grid-template-columns:236px 1fr;min-height:100vh;}
+.dash-side{background:var(--bg-2);border-right:1px solid var(--border);padding:26px 20px;display:flex;flex-direction:column;}
+.dash-side .brand-mark{font-size:19px;margin-bottom:36px;padding-left:6px;}
+.dash-nav{display:flex;flex-direction:column;gap:2px;flex:1;}
+.dash-nav button{
+  display:flex;align-items:center;gap:11px;padding:11px 12px;background:none;border:none;color:var(--muted);
+  font-size:13.5px;font-weight:600;text-align:left;border-radius:2px;transition:background .2s,color .2s;
+}
+.dash-nav button svg{width:17px;height:17px;flex-shrink:0;}
+.dash-nav button:hover{color:var(--ink);background:var(--panel);}
+.dash-nav button.active{color:var(--brass-bright);background:var(--panel);}
+.dash-user{border-top:1px solid var(--border);padding-top:18px;margin-top:12px;}
+.dash-user .who{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.avatar{width:34px;height:34px;border-radius:50%;background:var(--brass);color:#191400;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0;}
+.who b{display:block;font-size:13.5px;}
+.who span{font-size:11.5px;color:var(--muted-2);}
+.dash-main{padding:34px 40px 60px;max-width:1180px;}
+.dash-panel{display:none;}
+.dash-panel.active{display:block;animation:viewFade .35s ease both;}
+.dash-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:30px;flex-wrap:wrap;gap:16px;}
+.dash-head h1{font-family:var(--serif);font-size:28px;font-weight:500;margin:0 0 6px;}
+.dash-head p{color:var(--muted);font-size:14px;margin:0;}
+
+/* stat cards */
+.stat-row{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:36px;}
+.stat-card{background:var(--panel);border:1px solid var(--border);padding:20px;}
+.stat-card b{display:block;font-family:var(--serif);font-size:30px;font-weight:560;}
+.stat-card span{font-size:12px;color:var(--muted-2);font-weight:600;}
+.stat-card.warn b{color:var(--overdue);}
+
+/* tables */
+.table-card{background:var(--panel);border:1px solid var(--border);overflow:hidden;}
+.table-toolbar{display:flex;justify-content:space-between;align-items:center;padding:18px 20px;border-bottom:1px solid var(--border);gap:14px;flex-wrap:wrap;}
+.search-box{position:relative;flex:1;max-width:320px;}
+.search-box input{width:100%;padding:9px 14px 9px 34px;background:var(--bg);border:1px solid var(--border-strong);color:var(--ink);font-size:13.5px;}
+.search-box svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--muted-2);}
+.filter-select{padding:9px 12px;background:var(--bg);border:1px solid var(--border-strong);color:var(--ink);font-size:13px;}
+table{width:100%;border-collapse:collapse;}
+th{text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:0.04em;color:var(--muted-2);padding:12px 20px;border-bottom:1px solid var(--border);font-weight:700;}
+td{padding:14px 20px;border-bottom:1px solid var(--border);font-size:13.5px;}
+tr:last-child td{border-bottom:none;}
+tbody tr{transition:background .15s;}
+tbody tr:hover{background:rgba(255,255,255,0.02);}
+.mono-id{color:var(--muted-2);font-size:12px;}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;font-size:11.5px;font-weight:700;border-radius:20px;}
+.pill::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;}
+.pill-available{background:rgba(93,165,127,0.14);color:var(--available);}
+.pill-issued{background:rgba(201,138,70,0.14);color:var(--issued);}
+.pill-overdue{background:rgba(194,86,74,0.14);color:var(--overdue);}
+.pill-low{background:rgba(194,86,74,0.14);color:var(--overdue);}
+.row-actions{display:flex;gap:8px;}
+.icon-btn{background:none;border:1px solid var(--border-strong);color:var(--muted);width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:2px;transition:.2s;}
+.icon-btn:hover{border-color:var(--brass);color:var(--brass-bright);}
+.icon-btn svg{width:14px;height:14px;}
+.stock-bar{width:80px;height:5px;background:var(--border);position:relative;border-radius:3px;overflow:hidden;}
+.stock-bar i{position:absolute;left:0;top:0;bottom:0;background:var(--available);border-radius:3px;}
+.stock-bar.low i{background:var(--overdue);}
+
+/* book grid (student catalogue) */
+.book-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px;}
+.book-card{background:var(--panel);border:1px solid var(--border);padding:0;overflow:hidden;transition:transform .2s, border-color .2s;}
+.book-card:hover{transform:translateY(-3px);border-color:var(--border-strong);}
+.book-spine{height:110px;position:relative;display:flex;align-items:flex-end;padding:14px;}
+.book-spine .cat-tag{font-size:10.5px;font-weight:800;letter-spacing:0.04em;color:rgba(255,255,255,0.85);text-transform:uppercase;}
+.book-body{padding:16px;}
+.book-body h4{font-family:var(--serif);font-size:16px;font-weight:560;margin:0 0 4px;line-height:1.3;}
+.book-body .author{font-size:12.5px;color:var(--muted-2);margin-bottom:12px;}
+.book-body .meta-row{display:flex;justify-content:space-between;align-items:center;}
+
+/* forms / modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(8,9,14,0.7);z-index:500;display:none;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.active{display:flex;}
+.modal{background:var(--panel);border:1px solid var(--border-strong);width:100%;max-width:460px;padding:30px;animation:heroUp .3s ease both;}
+.modal h3{font-family:var(--serif);font-size:20px;margin:0 0 22px;font-weight:560;}
+.modal .field label{color:var(--muted);}
+.modal .field input, .modal .field select{background:var(--bg);border-color:var(--border-strong);color:var(--ink);}
+.modal-actions{display:flex;justify-content:flex-end;gap:12px;margin-top:6px;}
+
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:22px;}
+.desk-card{background:var(--panel);border:1px solid var(--border);padding:24px;}
+.desk-card h3{font-family:var(--serif);font-size:18px;margin:0 0 18px;font-weight:560;}
+.desk-result{border:1px solid var(--border);padding:14px;margin-top:14px;font-size:13.5px;display:none;}
+.desk-result.show{display:block;animation:heroUp .3s ease both;}
+.desk-result b{display:block;margin-bottom:4px;font-family:var(--serif);font-size:15px;font-weight:560;}
+.desk-result span{color:var(--muted);font-size:12.5px;}
+
+.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--paper);color:#1a1810;padding:14px 22px;font-size:13.5px;font-weight:700;border-radius:2px;box-shadow:var(--shadow-soft);z-index:900;opacity:0;pointer-events:none;transition:opacity .3s, transform .3s;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto;}
+
+.bar-chart{display:flex;align-items:flex-end;gap:14px;height:180px;padding-top:20px;}
+.bar-chart .bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:10px;}
+.bar-chart .bar{width:100%;background:linear-gradient(180deg,var(--brass-bright),var(--brass-dim));border-radius:2px 2px 0 0;transition:height 1s cubic-bezier(.2,.8,.2,1);}
+.bar-chart .bar-label{font-size:11px;color:var(--muted-2);font-weight:600;}
+
+/* Responsive */
+@media(max-width:980px){
+  .hero-grid{grid-template-columns:1fr;}
+  .hero-canvas-wrap{height:320px;order:-1;}
+  .hero h1{font-size:42px;}
+  .bento{grid-template-columns:repeat(2,1fr);}
+  .bento .card, .bento .card.wide{grid-column:span 1;}
+  .inst-grid{grid-template-columns:1fr;}
+  .workflow{flex-direction:column;}
+  .wf-step{border-right:none;border-bottom:1px solid var(--border);}
+  .login-wrap{grid-template-columns:1fr;}
+  .login-art{display:none;}
+  .stat-row{grid-template-columns:repeat(2,1fr);}
+  .dash{grid-template-columns:1fr;}
+  .dash-side{display:none;}
+  .two-col{grid-template-columns:1fr;}
+}
+@media(max-width:720px){
+  .nav-links{display:none;}
+  .hamburger{display:block;}
+  .hero{padding-top:150px;}
+}
+</style>
+</head>
+<body>
+
+<!-- =========================================================
+     HEADER
+========================================================= -->
+<header id="site-header">
+  <div class="container nav-row">
+    <a href="#" class="brand" onclick="showView('landing');return false;">
+      <span class="brand-mark">Grantha<span>laya</span></span>
+    </a>
+    <nav class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#workflow">How it works</a>
+      <a href="#institutions">For institutions</a>
+    </nav>
+    <div class="nav-cta">
+      <button class="btn btn-ghost btn-sm" onclick="showView('login')">Log in</button>
+    </div>
+    <button class="hamburger" aria-label="Menu" onclick="showView('login')"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<!-- =========================================================
+     LANDING VIEW
+========================================================= -->
+<main class="view active" id="view-landing">
+
+  <section class="hero">
+    <div class="container hero-grid">
+      <div class="hero-reveal">
+        <div class="hero-eyebrow-line"><div class="dash-line"></div><span>One system, every reading room</span></div>
+        <h1>The library, running quietly&nbsp;<em>in the background.</em></h1>
+        <p class="hero-sub">Granthalaya keeps the catalogue, the shelves, and the people who borrow from them in sync — built to fit a school library on Monday and a university stack of forty thousand titles by Friday.</p>
+        <div class="hero-actions">
+          <button class="btn btn-brass" onclick="showView('login');selectRole('student')">Continue as a student</button>
+          <button class="btn btn-ghost" onclick="showView('login');selectRole('staff')">Enter as staff</button>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat"><b id="stat-titles">0</b><span>Titles catalogued</span></div>
+          <div class="hero-stat"><b id="stat-copies">0</b><span>Physical copies tracked</span></div>
+          <div class="hero-stat"><b id="stat-institutions">3</b><span>Institution types supported</span></div>
+        </div>
+      </div>
+      <div class="hero-canvas-wrap"><canvas id="hero-canvas"></canvas></div>
+    </div>
+  </section>
+
+  <div class="strip">
+    <div class="container strip-row">
+      <span>Configured in a day for —</span>
+      <b>School libraries</b><b>College &amp; university libraries</b><b>Departmental &amp; research collections</b><b>Public reading rooms</b>
+    </div>
+  </div>
+
+  <section class="reveal-section fade-in-obs" id="features">
+    <div class="container">
+      <div class="section-head">
+        <h2>Everything the front desk and the back room need</h2>
+        <p>Cataloguing and lending are only half the job. Granthalaya treats the physical stock — copies, condition, shelf location — as seriously as the records about who's reading what.</p>
+      </div>
+      <div class="bento">
+        <div class="card wide">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19.5V4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5a2.5 2.5 0 0 0 0 5H20"/></svg>
+          <h3>Catalogue &amp; search</h3>
+          <p>Add, edit, and retire titles in seconds. Search by title, author, category, or accession number, and see live availability before a student walks to the shelf.</p>
+        </div>
+        <div class="card">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="7" width="18" height="13" rx="1"/><path d="M8 7V5a4 4 0 0 1 8 0v2"/></svg>
+          <h3>Inventory control</h3>
+          <p>Every copy is tracked, not just every title — shelf location, condition, and restock alerts when a section runs low.</p>
+        </div>
+        <div class="card">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+          <h3>Issue &amp; return desk</h3>
+          <p>Scan or search a member and a book, and the due date, availability count, and history update together — no double entry.</p>
+        </div>
+        <div class="card">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg>
+          <h3>Two front doors</h3>
+          <p>Students and staff sign in to purpose-built views — one for browsing and borrowing, one for running the collection.</p>
+        </div>
+        <div class="card wide">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
+          <h3>Overdue &amp; availability tracking</h3>
+          <p>Colour-coded due dates surface overdue copies automatically, and the moment a book comes back, it reappears in the catalogue as available.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal-section fade-in-obs" id="workflow" style="padding-top:0;">
+    <div class="container">
+      <div class="section-head">
+        <h2>How a single copy moves through the system</h2>
+        <p>The same lifecycle applies whether it's a paperback in a school library or a reference volume in a university archive.</p>
+      </div>
+      <div class="workflow">
+        <div class="wf-step"><div class="wf-num">01</div><h4>Catalogued</h4><p>A title and its copies are added, with category and accession details.</p></div>
+        <div class="wf-step"><div class="wf-num">02</div><h4>Shelved</h4><p>Inventory records the shelf location and condition of each physical copy.</p></div>
+        <div class="wf-step"><div class="wf-num">03</div><h4>Issued</h4><p>A member borrows a copy; availability and due date update instantly.</p></div>
+        <div class="wf-step"><div class="wf-num">04</div><h4>Returned</h4><p>The copy is checked back in and its condition reconfirmed.</p></div>
+        <div class="wf-step"><div class="wf-num">05</div><h4>Reconciled</h4><p>Transaction history and stock counts stay accurate for the next report.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="reveal-section fade-in-obs" id="institutions">
+    <div class="container">
+      <div class="section-head">
+        <h2>Built to be reconfigured, not rebuilt</h2>
+        <p>The same catalogue, inventory, and lending engine — set up differently depending on who's running the room.</p>
+      </div>
+      <div class="inst-grid">
+        <div class="inst-card"><span class="tag">School</span><h3>Class-set lending</h3><p>Issue textbooks by class and section, track class-set copies separately from the general shelf, and keep an eye on end-of-term returns.</p></div>
+        <div class="inst-card"><span class="tag">College &amp; university</span><h3>High-volume stacks</h3><p>Thousands of titles across departments, longer loan periods for research material, and staff accounts scoped to a section of the collection.</p></div>
+        <div class="inst-card"><span class="tag">Public &amp; community</span><h3>Open membership</h3><p>Walk-in registration, mixed-format collections, and a catalogue built for browsing rather than searching for a syllabus item.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <div class="container">
+      <h2>See it as a student, or run the desk as staff.</h2>
+      <p>The prototype below is a front-end walkthrough — no real accounts required.</p>
+      <button class="btn btn-brass" onclick="showView('login')">Open the login</button>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <div class="foot-row">
+        <div class="foot-col" style="max-width:260px;">
+          <span class="brand-mark" style="font-size:19px;">Grantha<span style="color:var(--brass-bright)">laya</span></span>
+          <p style="margin-top:14px;">A configurable library and inventory system for schools, colleges, and community libraries.</p>
+        </div>
+        <div class="foot-col">
+          <h5>Product</h5>
+          <a href="#features">Features</a>
+          <a href="#workflow">Workflow</a>
+          <a href="#institutions">For institutions</a>
+        </div>
+        <div class="foot-col">
+          <h5>Access</h5>
+          <a onclick="showView('login');selectRole('student')" href="#">Student login</a>
+          <a onclick="showView('login');selectRole('staff')" href="#">Staff &amp; admin login</a>
+        </div>
+        <div class="foot-col">
+          <h5>Project</h5>
+          <p>DevOps Fundamentals &amp; SCM — Mini Project</p>
+          <p>B.Tech DevOps, Semester III, UPES</p>
+        </div>
+      </div>
+      <div class="foot-bottom">
+        <span>Developed by Anmol Malhotra &amp; Aniket Shishodia</span>
+        <span>Front-end prototype — Node.js/Express &amp; MySQL backend per project synopsis</span>
+      </div>
+    </div>
+  </footer>
+</main>
+
+<!-- =========================================================
+     LOGIN VIEW
+========================================================= -->
+<main class="view" id="view-login">
+  <div class="login-wrap">
+    <div class="login-art">
+      <canvas id="login-canvas"></canvas>
+      <a href="#" class="brand-mark" style="position:relative;" onclick="showView('landing');return false;">Grantha<span style="color:var(--brass-bright)">laya</span></a>
+      <p class="login-quote">"A library isn't a room of books. It's a room of things that are currently somewhere else."<span>DESIGNED FOR THE DESK, NOT JUST THE SHELF</span></p>
+    </div>
+    <div class="login-side">
+      <div class="login-card">
+        <a href="#" class="login-back" onclick="showView('landing');return false;">← Back to overview</a>
+        <div class="role-toggle" id="role-toggle">
+          <div class="indicator"></div>
+          <button type="button" class="active" onclick="selectRole('student')">Student</button>
+          <button type="button" onclick="selectRole('staff')">Staff &amp; admin</button>
+        </div>
+
+        <div class="login-panel active" id="panel-student">
+          <h2>Welcome back</h2>
+          <p>Sign in to browse the catalogue and manage your borrowed books.</p>
+          <form onsubmit="return doLogin(event,'student')">
+            <div class="field"><label>Enrollment number</label><input type="text" placeholder="e.g. 590023097" required></div>
+            <div class="field"><label>Password</label><input type="password" placeholder="••••••••" required></div>
+            <div class="field-row"><span></span><a href="#">Forgot password?</a></div>
+            <button type="submit" class="btn btn-ink btn-block">Sign in as student</button>
+          </form>
+        </div>
+
+        <div class="login-panel" id="panel-staff">
+          <h2>Staff &amp; admin sign in</h2>
+          <p>Access the desk, inventory, and catalogue management tools.</p>
+          <form onsubmit="return doLogin(event,'staff')">
+            <div class="field"><label>Staff ID</label><input type="text" placeholder="e.g. LIB-014" required></div>
+            <div class="field"><label>Institution code</label><input type="text" placeholder="e.g. UPES-DDN" required></div>
+            <div class="field"><label>Password</label><input type="password" placeholder="••••••••" required></div>
+            <button type="submit" class="btn btn-brass btn-block">Sign in as staff</button>
+          </form>
+        </div>
+        <p class="login-note">Prototype front end — any details will sign you in. Authentication, roles, and the database layer are implemented separately per the project's Node.js/Express and MySQL stack.</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- =========================================================
+     STUDENT DASHBOARD
+========================================================= -->
+<main class="view" id="view-student">
+  <div class="dash">
+    <aside class="dash-side">
+      <span class="brand-mark">Grantha<span style="color:var(--brass-bright)">laya</span></span>
+      <nav class="dash-nav" id="student-nav">
+        <button class="active" data-panel="s-catalogue" onclick="showDashPanel('student','s-catalogue')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg> Catalogue</button>
+        <button data-panel="s-mybooks" onclick="showDashPanel('student','s-mybooks')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5V4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5a2.5 2.5 0 0 0 0 5H20"/></svg> My books</button>
+        <button data-panel="s-notices" onclick="showDashPanel('student','s-notices')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg> Notices</button>
+      </nav>
+      <div class="dash-user">
+        <div class="who"><div class="avatar">AM</div><div><b>Aarav Mehta</b><span>Enrollment 590041182</span></div></div>
+        <button class="btn btn-ghost btn-sm btn-block" onclick="showView('landing')">Log out</button>
+      </div>
+    </aside>
+    <div class="dash-main">
+
+      <div class="dash-panel active" id="s-catalogue">
+        <div class="dash-head"><div><h1>Catalogue</h1><p>Search the full collection and request a copy to borrow.</p></div></div>
+        <div class="table-toolbar" style="margin-bottom:20px;background:var(--panel);border:1px solid var(--border);padding:16px 18px;">
+          <div class="search-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            <input type="text" id="student-search" placeholder="Search by title or author" oninput="renderStudentCatalogue()"></div>
+          <select class="filter-select" id="student-cat-filter" onchange="renderStudentCatalogue()">
+            <option value="">All categories</option>
+          </select>
+          <select class="filter-select" id="student-avail-filter" onchange="renderStudentCatalogue()">
+            <option value="">Any availability</option>
+            <option value="available">Available now</option>
+          </select>
+        </div>
+        <div class="book-grid" id="student-book-grid"></div>
+      </div>
+
+      <div class="dash-panel" id="s-mybooks">
+        <div class="dash-head"><div><h1>My books</h1><p>Books currently issued to you and your recent history.</p></div></div>
+        <div class="table-card" style="margin-bottom:24px;">
+          <div class="table-toolbar"><b style="font-size:14px;">Currently issued</b></div>
+          <table><thead><tr><th>Title</th><th>Issued on</th><th>Due date</th><th>Status</th></tr></thead>
+          <tbody id="student-issued-body"></tbody></table>
+        </div>
+        <div class="table-card">
+          <div class="table-toolbar"><b style="font-size:14px;">Pending requests</b></div>
+          <table><thead><tr><th>Title</th><th>Requested on</th><th>Status</th></tr></thead>
+          <tbody id="student-requests-body"><tr><td colspan="3" style="color:var(--muted-2);">No pending requests yet — request a book from the catalogue.</td></tr></tbody></table>
+        </div>
+      </div>
+
+      <div class="dash-panel" id="s-notices">
+        <div class="dash-head"><div><h1>Notices</h1><p>Reminders about due dates and library announcements.</p></div></div>
+        <div class="table-card"><div style="padding:24px;">
+          <p style="color:var(--muted);font-size:14px;line-height:1.7;margin:0 0 14px;">• Books are due 14 days from issue. A copy showing <span class="pill pill-overdue" style="vertical-align:middle;">overdue</span> should be returned at the front desk as soon as possible.</p>
+          <p style="color:var(--muted);font-size:14px;line-height:1.7;margin:0;">• Automated email/SMS reminders and fine calculation are listed as future scope in the project synopsis — this prototype shows due-date status only.</p>
+        </div></div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<!-- =========================================================
+     ADMIN / STAFF DASHBOARD
+========================================================= -->
+<main class="view" id="view-admin">
+  <div class="dash">
+    <aside class="dash-side">
+      <span class="brand-mark">Grantha<span style="color:var(--brass-bright)">laya</span></span>
+      <nav class="dash-nav" id="admin-nav">
+        <button class="active" data-panel="a-overview" onclick="showDashPanel('admin','a-overview')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg> Overview</button>
+        <button data-panel="a-catalogue" onclick="showDashPanel('admin','a-catalogue')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5V4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5a2.5 2.5 0 0 0 0 5H20"/></svg> Catalogue</button>
+        <button data-panel="a-inventory" onclick="showDashPanel('admin','a-inventory')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="7" width="18" height="13" rx="1"/><path d="M8 7V5a4 4 0 0 1 8 0v2"/></svg> Inventory</button>
+        <button data-panel="a-desk" onclick="showDashPanel('admin','a-desk')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg> Issue / return</button>
+        <button data-panel="a-members" onclick="showDashPanel('admin','a-members')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="18" cy="9" r="2.6"/><path d="M15.7 12.3A5 5 0 0 1 21.5 17"/></svg> Members</button>
+        <button data-panel="a-reports" onclick="showDashPanel('admin','a-reports')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg> Reports</button>
+      </nav>
+      <div class="dash-user">
+        <div class="who"><div class="avatar">RS</div><div><b>Reema Suri</b><span>Librarian — Staff ID LIB-014</span></div></div>
+        <button class="btn btn-ghost btn-sm btn-block" onclick="showView('landing')">Log out</button>
+      </div>
+    </aside>
+    <div class="dash-main">
+
+      <div class="dash-panel active" id="a-overview">
+        <div class="dash-head"><div><h1>Overview</h1><p>A snapshot of the collection right now.</p></div></div>
+        <div class="stat-row" id="admin-stats"></div>
+        <div class="table-card">
+          <div class="table-toolbar"><b style="font-size:14px;">Recent activity</b></div>
+          <table><thead><tr><th>Book</th><th>Member</th><th>Action</th><th>Date</th></tr></thead>
+          <tbody id="admin-activity-body"></tbody></table>
+        </div>
+      </div>
+
+      <div class="dash-panel" id="a-catalogue">
+        <div class="dash-head">
+          <div><h1>Catalogue management</h1><p>Add, edit, or retire titles in the collection.</p></div>
+          <button class="btn btn-brass btn-sm" onclick="openBookModal()">+ Add title</button>
+        </div>
+        <div class="table-card">
+          <div class="table-toolbar">
+            <div class="search-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+              <input type="text" id="admin-cat-search" placeholder="Search titles, authors, ISBN" oninput="renderAdminCatalogue()"></div>
+            <select class="filter-select" id="admin-cat-filter" onchange="renderAdminCatalogue()"><option value="">All categories</option></select>
+          </div>
+          <table><thead><tr><th>Title</th><th>Author</th><th>Category</th><th>Copies</th><th>Status</th><th></th></tr></thead>
+          <tbody id="admin-catalogue-body"></tbody></table>
+        </div>
+      </div>
+
+      <div class="dash-panel" id="a-inventory">
+        <div class="dash-head"><div><h1>Inventory</h1><p>Physical stock — shelf location, condition, and restock alerts.</p></div></div>
+        <div class="table-card">
+          <div class="table-toolbar">
+            <div class="search-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+              <input type="text" id="admin-inv-search" placeholder="Search by title or shelf" oninput="renderInventory()"></div>
+            <select class="filter-select" id="admin-inv-filter" onchange="renderInventory()">
+              <option value="">All stock levels</option>
+              <option value="low">Low stock only</option>
+            </select>
+          </div>
+          <table><thead><tr><th>Title</th><th>Shelf</th><th>Condition</th><th>Available / Total</th><th>Stock</th><th></th></tr></thead>
+          <tbody id="admin-inventory-body"></tbody></table>
+        </div>
+      </div>
+
+      <div class="dash-panel" id="a-desk">
+        <div class="dash-head"><div><h1>Issue / return desk</h1><p>Process a borrow or a return in a few keystrokes.</p></div></div>
+        <div class="two-col">
+          <div class="desk-card">
+            <h3>Issue a book</h3>
+            <div class="field"><label>Book title or ID</label><input type="text" id="issue-book-input" placeholder="e.g. Clean Code or B-002"></div>
+            <div class="field"><label>Member enrollment / staff ID</label><input type="text" id="issue-member-input" placeholder="e.g. 590041182"></div>
+            <button class="btn btn-brass btn-block" onclick="processIssue()">Issue book</button>
+            <div class="desk-result" id="issue-result"></div>
+          </div>
+          <div class="desk-card">
+            <h3>Return a book</h3>
+            <div class="field"><label>Active transaction</label>
+              <select id="return-select"></select>
+            </div>
+            <button class="btn btn-ghost btn-block" onclick="processReturn()">Return book</button>
+            <div class="desk-result" id="return-result"></div>
+          </div>
+        </div>
+        <div class="table-card" style="margin-top:24px;">
+          <div class="table-toolbar"><b style="font-size:14px;">Recent transactions</b></div>
+          <table><thead><tr><th>Book</th><th>Member</th><th>Issued</th><th>Due</th><th>Status</th></tr></thead>
+          <tbody id="admin-transactions-body"></tbody></table>
+        </div>
+      </div>
+
+      <div class="dash-panel" id="a-members">
+        <div class="dash-head"><div><h1>Members</h1><p>Students and staff registered in the system.</p></div></div>
+        <div class="table-card">
+          <div class="table-toolbar">
+            <div class="search-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+              <input type="text" id="admin-member-search" placeholder="Search members" oninput="renderMembers()"></div>
+          </div>
+          <table><thead><tr><th>Name</th><th>ID</th><th>Role</th><th>Books held</th><th>Status</th></tr></thead>
+          <tbody id="admin-members-body"></tbody></table>
+        </div>
+      </div>
+
+      <div class="dash-panel" id="a-reports">
+        <div class="dash-head"><div><h1>Reports</h1><p>A quick read on how the collection is being used.</p></div></div>
+        <div class="two-col">
+          <div class="desk-card">
+            <h3>Issues by category, this month</h3>
+            <div class="bar-chart" id="report-bar-chart"></div>
+          </div>
+          <div class="desk-card">
+            <h3>Collection health</h3>
+            <div id="report-health" style="display:flex;flex-direction:column;gap:16px;"></div>
+          </div>
+        </div>
+        <p style="color:var(--muted-2);font-size:12.5px;margin-top:20px;">Full usage analytics dashboards are listed as future scope in the project synopsis; this view demonstrates the reporting surface with current data.</p>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<!-- Add/Edit Book Modal -->
+<div class="modal-overlay" id="book-modal">
+  <div class="modal">
+    <h3 id="book-modal-title">Add a title</h3>
+    <form onsubmit="return saveBook(event)">
+      <input type="hidden" id="book-edit-id">
+      <div class="field"><label>Title</label><input type="text" id="book-title" required></div>
+      <div class="field"><label>Author</label><input type="text" id="book-author" required></div>
+      <div class="two-col">
+        <div class="field"><label>Category</label>
+          <select id="book-category"><option>Computer Science</option><option>Fiction</option><option>Reference</option><option>Science</option><option>History</option><option>Children</option></select></div>
+        <div class="field"><label>Total copies</label><input type="number" id="book-copies" min="1" value="1" required></div>
+      </div>
+      <div class="two-col">
+        <div class="field"><label>Shelf location</label><input type="text" id="book-shelf" placeholder="e.g. CS-3B" required></div>
+        <div class="field"><label>Condition</label>
+          <select id="book-condition"><option>New</option><option>Good</option><option>Worn</option></select></div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost btn-sm" onclick="closeBookModal()">Cancel</button>
+        <button type="submit" class="btn btn-brass btn-sm">Save title</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   DATA LAYER (client-side demo state)
+========================================================= */
+let DB = {
+  books: [
+    {id:'B-001', title:'Clean Code', author:'Robert C. Martin', isbn:'9780132350884', category:'Computer Science', total:4, shelf:'CS-1A', condition:'Good'},
+    {id:'B-002', title:'Designing Data-Intensive Applications', author:'Martin Kleppmann', isbn:'9781449373320', category:'Computer Science', total:3, shelf:'CS-1B', condition:'New'},
+    {id:'B-003', title:'The Pragmatic Programmer', author:'Andrew Hunt & David Thomas', isbn:'9780135957059', category:'Computer Science', total:2, shelf:'CS-2A', condition:'Worn'},
+    {id:'B-004', title:'Sapiens', author:'Yuval Noah Harari', isbn:'9780062316097', category:'History', total:5, shelf:'HI-1A', condition:'Good'},
+    {id:'B-005', title:'The Midnight Library', author:'Matt Haig', isbn:'9780525559474', category:'Fiction', total:6, shelf:'FI-3C', condition:'Good'},
+    {id:'B-006', title:'A Brief History of Time', author:'Stephen Hawking', isbn:'9780553380163', category:'Science', total:3, shelf:'SC-1A', condition:'Good'},
+    {id:'B-007', title:'Charlotte\'s Web', author:'E. B. White', isbn:'9780061124952', category:'Children', total:8, shelf:'CH-1A', condition:'New'},
+    {id:'B-008', title:'Concise Oxford English Dictionary', author:'Oxford Languages', isbn:'9780199601080', category:'Reference', total:2, shelf:'RF-1A', condition:'Good'},
+    {id:'B-009', title:'Introduction to Algorithms', author:'Cormen, Leiserson, Rivest, Stein', isbn:'9780262046305', category:'Computer Science', total:3, shelf:'CS-2B', condition:'Good'},
+    {id:'B-010', title:'The Silent Patient', author:'Alex Michaelides', isbn:'9781250301697', category:'Fiction', total:4, shelf:'FI-2A', condition:'New'},
+  ],
+  members: [
+    {id:'590041182', name:'Aarav Mehta', role:'Student', status:'Active'},
+    {id:'590044821', name:'Diya Kapoor', role:'Student', status:'Active'},
+    {id:'590039981', name:'Kabir Nanda', role:'Student', status:'Active'},
+    {id:'LIB-014', name:'Reema Suri', role:'Staff', status:'Active'},
+  ],
+  transactions: [], // {id, bookId, memberId, issueDate, dueDate, returnDate, status}
+  requests: []
+};
+
+function daysFromNow(n){ const d = new Date(); d.setDate(d.getDate()+n); return d; }
+function fmtDate(d){ return d.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}); }
+function uid(prefix){ return prefix + '-' + Math.random().toString(36).slice(2,7).toUpperCase(); }
+
+// seed a few transactions so the desk isn't empty
+(function seedTransactions(){
+  DB.transactions.push({id:uid('T'), bookId:'B-001', memberId:'590041182', issueDate:daysFromNow(-5), dueDate:daysFromNow(9), returnDate:null, status:'issued'});
+  DB.transactions.push({id:uid('T'), bookId:'B-003', memberId:'590044821', issueDate:daysFromNow(-20), dueDate:daysFromNow(-6), returnDate:null, status:'issued'}); // overdue
+  DB.transactions.push({id:uid('T'), bookId:'B-005', memberId:'590039981', issueDate:daysFromNow(-30), dueDate:daysFromNow(-16), returnDate:daysFromNow(-14), status:'returned'});
+})();
+
+function issuedCount(bookId){
+  return DB.transactions.filter(t=>t.bookId===bookId && t.status==='issued').length;
+}
+function availableCount(book){
+  return Math.max(0, book.total - issuedCount(book.id));
+}
+function txStatus(t){
+  if(t.status==='returned') return 'returned';
+  return (new Date() > t.dueDate) ? 'overdue' : 'issued';
+}
+
+/* =========================================================
+   VIEW ROUTING
+========================================================= */
+function showView(name){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  document.getElementById('site-header').style.display = (name==='landing') ? 'block' : 'none';
+  window.scrollTo({top:0, behavior:'instant' in window ? 'instant':'auto'});
+  if(name==='student') refreshStudentViews();
+  if(name==='admin') refreshAdminViews();
+}
+
+function selectRole(role){
+  const toggle = document.getElementById('role-toggle');
+  document.querySelectorAll('.role-toggle button').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.login-panel').forEach(p=>p.classList.remove('active'));
+  if(role==='student'){
+    toggle.classList.remove('staff');
+    toggle.children[1].classList.add('active');
+    document.getElementById('panel-student').classList.add('active');
+  } else {
+    toggle.classList.add('staff');
+    toggle.children[2].classList.add('active');
+    document.getElementById('panel-staff').classList.add('active');
+  }
+}
+
+function doLogin(e, role){
+  e.preventDefault();
+  showToast(role==='student' ? 'Signed in as a student' : 'Signed in as staff');
+  showView(role==='student' ? 'student' : 'admin');
+  return false;
+}
+
+function showDashPanel(scope, panelId){
+  const nav = document.getElementById(scope+'-nav');
+  nav.querySelectorAll('button').forEach(b=>b.classList.toggle('active', b.dataset.panel===panelId));
+  document.querySelectorAll('#view-'+scope+' .dash-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById(panelId).classList.add('active');
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+/* =========================================================
+   HEADER SCROLL STATE
+========================================================= */
+window.addEventListener('scroll', ()=>{
+  document.getElementById('site-header').classList.toggle('scrolled', window.scrollY>10);
+});
+
+/* =========================================================
+   SCROLL REVEAL for landing sections
+========================================================= */
+const revealObserver = new IntersectionObserver((entries)=>{
+  entries.forEach(en=>{ if(en.isIntersecting){ en.target.classList.add('in'); revealObserver.unobserve(en.target);} });
+},{threshold:0.15});
+document.querySelectorAll('.fade-in-obs').forEach(el=>revealObserver.observe(el));
+
+/* count-up stat animation on landing */
+function countUp(el, target, duration){
+  const start = performance.now();
+  function tick(now){
+    const p = Math.min(1, (now-start)/duration);
+    el.textContent = Math.floor(p*target).toLocaleString('en-IN');
+    if(p<1) requestAnimationFrame(tick); else el.textContent = target.toLocaleString('en-IN');
+  }
+  requestAnimationFrame(tick);
+}
+function totalCopies(){ return DB.books.reduce((s,b)=>s+b.total,0); }
+/* Illustrative scale figures for the marketing hero — independent of the small demo catalogue below,
+   which intentionally ships with a handful of sample titles so the prototype is easy to walk through. */
+countUp(document.getElementById('stat-titles'), 12400, 1400);
+countUp(document.getElementById('stat-copies'), 38900, 1600);
+
+/* =========================================================
+   CATEGORY OPTIONS
+========================================================= */
+function populateCategoryFilters(){
+  const cats = [...new Set(DB.books.map(b=>b.category))].sort();
+  ['student-cat-filter','admin-cat-filter'].forEach(id=>{
+    const sel = document.getElementById(id);
+    const current = sel.value;
+    sel.innerHTML = sel.querySelector('option').outerHTML + cats.map(c=>`<option value="${c}">${c}</option>`).join('');
+    sel.value = current;
+  });
+}
+
+/* =========================================================
+   STUDENT VIEW RENDERING
+========================================================= */
+const CAT_COLORS = {
+  'Computer Science':'#2C3E63','Fiction':'#5A2E44','Reference':'#3B4A3A','Science':'#2E4A52',
+  'History':'#5A4326','Children':'#4A3B5A'
+};
+
+function renderStudentCatalogue(){
+  const q = (document.getElementById('student-search').value||'').toLowerCase();
+  const cat = document.getElementById('student-cat-filter').value;
+  const availOnly = document.getElementById('student-avail-filter').value==='available';
+  const grid = document.getElementById('student-book-grid');
+  const results = DB.books.filter(b=>{
+    const matchQ = !q || b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q);
+    const matchCat = !cat || b.category===cat;
+    const avail = availableCount(b);
+    const matchAvail = !availOnly || avail>0;
+    return matchQ && matchCat && matchAvail;
+  });
+  grid.innerHTML = results.map(b=>{
+    const avail = availableCount(b);
+    const color = CAT_COLORS[b.category] || '#2C3E63';
+    return `<div class="book-card">
+      <div class="book-spine" style="background:linear-gradient(135deg, ${color}, ${color}CC);">
+        <span class="cat-tag">${b.category}</span>
+      </div>
+      <div class="book-body">
+        <h4>${b.title}</h4>
+        <div class="author">${b.author}</div>
+        <div class="meta-row">
+          <span class="pill ${avail>0?'pill-available':'pill-overdue'}">${avail>0 ? avail+' available' : 'All issued'}</span>
+          <button class="icon-btn" title="Request to borrow" onclick="requestBook('${b.id}')" ${avail>0?'':'disabled style=\"opacity:.35;cursor:not-allowed;\"'}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>`;
+  }).join('') || '<p style="color:var(--muted-2);">No titles match that search.</p>';
+}
+
+function requestBook(bookId){
+  const book = DB.books.find(b=>b.id===bookId);
+  DB.requests.push({id:uid('R'), bookId, date:new Date(), status:'Pending staff approval'});
+  showToast(`Requested "${book.title}" — pending staff approval`);
+  renderStudentRequests();
+}
+
+function renderStudentIssued(){
+  const memberId = '590041182';
+  const rows = DB.transactions.filter(t=>t.memberId===memberId && t.status==='issued');
+  const body = document.getElementById('student-issued-body');
+  body.innerHTML = rows.map(t=>{
+    const book = DB.books.find(b=>b.id===t.bookId);
+    const st = txStatus(t);
+    return `<tr><td>${book.title}</td><td>${fmtDate(t.issueDate)}</td><td>${fmtDate(t.dueDate)}</td>
+      <td><span class="pill ${st==='overdue'?'pill-overdue':'pill-issued'}">${st==='overdue'?'Overdue':'Issued'}</span></td></tr>`;
+  }).join('') || '<tr><td colspan="4" style="color:var(--muted-2);">No books currently issued to you.</td></tr>';
+}
+
+function renderStudentRequests(){
+  const body = document.getElementById('student-requests-body');
+  if(DB.requests.length===0){
+    body.innerHTML = '<tr><td colspan="3" style="color:var(--muted-2);">No pending requests yet — request a book from the catalogue.</td></tr>';
+    return;
+  }
+  body.innerHTML = DB.requests.map(r=>{
+    const book = DB.books.find(b=>b.id===r.bookId);
+    return `<tr><td>${book.title}</td><td>${fmtDate(r.date)}</td><td><span class="pill pill-issued">${r.status}</span></td></tr>`;
+  }).join('');
+}
+
+function refreshStudentViews(){
+  populateCategoryFilters();
+  renderStudentCatalogue();
+  renderStudentIssued();
+  renderStudentRequests();
+}
+
+/* =========================================================
+   ADMIN VIEW RENDERING
+========================================================= */
+function renderAdminStats(){
+  const totalTitles = DB.books.length;
+  const totalCopiesN = totalCopies();
+  const issuedNow = DB.transactions.filter(t=>t.status==='issued').length;
+  const overdue = DB.transactions.filter(t=>txStatus(t)==='overdue').length;
+  const lowStock = DB.books.filter(b=>availableCount(b) <= Math.ceil(b.total*0.2)).length;
+  const stats = [
+    {label:'Total titles', value:totalTitles},
+    {label:'Total copies', value:totalCopiesN},
+    {label:'Issued right now', value:issuedNow},
+    {label:'Overdue', value:overdue, warn:true},
+    {label:'Low stock alerts', value:lowStock, warn:lowStock>0},
+  ];
+  document.getElementById('admin-stats').innerHTML = stats.map(s=>
+    `<div class="stat-card ${s.warn?'warn':''}"><b>${s.value}</b><span>${s.label}</span></div>`).join('');
+}
+
+function renderAdminActivity(){
+  const recent = [...DB.transactions].sort((a,b)=>b.issueDate-a.issueDate).slice(0,6);
+  document.getElementById('admin-activity-body').innerHTML = recent.map(t=>{
+    const book = DB.books.find(b=>b.id===t.bookId);
+    const member = DB.members.find(m=>m.id===t.memberId);
+    return `<tr><td>${book?book.title:t.bookId}</td><td>${member?member.name:t.memberId}</td>
+      <td>${t.status==='returned'?'Returned':'Issued'}</td><td>${fmtDate(t.status==='returned'?t.returnDate:t.issueDate)}</td></tr>`;
+  }).join('') || '<tr><td colspan="4" style="color:var(--muted-2);">No activity yet.</td></tr>';
+}
+
+function renderAdminCatalogue(){
+  const q = (document.getElementById('admin-cat-search').value||'').toLowerCase();
+  const cat = document.getElementById('admin-cat-filter').value;
+  const rows = DB.books.filter(b=>{
+    const matchQ = !q || b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q) || b.isbn.includes(q);
+    const matchCat = !cat || b.category===cat;
+    return matchQ && matchCat;
+  });
+  document.getElementById('admin-catalogue-body').innerHTML = rows.map(b=>{
+    const avail = availableCount(b);
+    return `<tr>
+      <td><b>${b.title}</b><br><span class="mono-id">${b.id} · ISBN ${b.isbn}</span></td>
+      <td>${b.author}</td><td>${b.category}</td><td>${avail} / ${b.total}</td>
+      <td><span class="pill ${avail>0?'pill-available':'pill-issued'}">${avail>0?'Available':'Fully issued'}</span></td>
+      <td><div class="row-actions">
+        <button class="icon-btn" title="Edit" onclick="openBookModal('${b.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+        <button class="icon-btn" title="Remove" onclick="deleteBook('${b.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg></button>
+      </div></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" style="color:var(--muted-2);">No titles match.</td></tr>';
+}
+
+function renderInventory(){
+  const q = (document.getElementById('admin-inv-search').value||'').toLowerCase();
+  const lowOnly = document.getElementById('admin-inv-filter').value==='low';
+  const rows = DB.books.filter(b=>{
+    const matchQ = !q || b.title.toLowerCase().includes(q) || b.shelf.toLowerCase().includes(q);
+    const avail = availableCount(b);
+    const isLow = avail <= Math.ceil(b.total*0.2);
+    return matchQ && (!lowOnly || isLow);
+  });
+  document.getElementById('admin-inventory-body').innerHTML = rows.map(b=>{
+    const avail = availableCount(b);
+    const pct = Math.round((avail/b.total)*100);
+    const isLow = avail <= Math.ceil(b.total*0.2);
+    return `<tr>
+      <td><b>${b.title}</b></td><td class="mono-id">${b.shelf}</td><td>${b.condition}</td>
+      <td>${avail} / ${b.total}</td>
+      <td><div class="stock-bar ${isLow?'low':''}"><i style="width:${pct}%"></i></div></td>
+      <td>${isLow ? '<span class="pill pill-low">Restock</span>' : ''}
+        <button class="icon-btn" title="Add copies" onclick="addCopy('${b.id}')" style="margin-left:8px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
+      </td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" style="color:var(--muted-2);">No matches.</td></tr>';
+}
+
+function addCopy(bookId){
+  const book = DB.books.find(b=>b.id===bookId);
+  book.total += 1;
+  showToast(`Added one copy of "${book.title}" — now ${book.total} total`);
+  renderInventory(); renderAdminCatalogue(); renderAdminStats();
+}
+
+function renderTransactionsTable(){
+  const rows = [...DB.transactions].sort((a,b)=>b.issueDate-a.issueDate);
+  document.getElementById('admin-transactions-body').innerHTML = rows.map(t=>{
+    const book = DB.books.find(b=>b.id===t.bookId);
+    const member = DB.members.find(m=>m.id===t.memberId);
+    const st = txStatus(t);
+    const label = st==='returned' ? 'Returned' : (st==='overdue' ? 'Overdue' : 'Issued');
+    const cls = st==='returned' ? 'pill-available' : (st==='overdue' ? 'pill-overdue' : 'pill-issued');
+    return `<tr><td>${book?book.title:t.bookId}</td><td>${member?member.name:t.memberId}</td>
+      <td>${fmtDate(t.issueDate)}</td><td>${fmtDate(t.dueDate)}</td>
+      <td><span class="pill ${cls}">${label}</span></td></tr>`;
+  }).join('');
+}
+
+function populateReturnSelect(){
+  const sel = document.getElementById('return-select');
+  const active = DB.transactions.filter(t=>t.status==='issued');
+  sel.innerHTML = active.map(t=>{
+    const book = DB.books.find(b=>b.id===t.bookId);
+    const member = DB.members.find(m=>m.id===t.memberId);
+    return `<option value="${t.id}">${book?book.title:t.bookId} — ${member?member.name:t.memberId}</option>`;
+  }).join('') || '<option value="">No active issues</option>';
+}
+
+function processIssue(){
+  const bookQ = document.getElementById('issue-book-input').value.trim().toLowerCase();
+  const memberQ = document.getElementById('issue-member-input').value.trim().toLowerCase();
+  const resultEl = document.getElementById('issue-result');
+  const book = DB.books.find(b=>b.id.toLowerCase()===bookQ || b.title.toLowerCase()===bookQ || b.title.toLowerCase().includes(bookQ));
+  const member = DB.members.find(m=>m.id.toLowerCase()===memberQ);
+  if(!book || !bookQ){ resultEl.innerHTML = '<b style="color:var(--overdue);">Book not found</b><span>Try an exact title or book ID, e.g. B-002.</span>'; resultEl.classList.add('show'); return; }
+  if(!member || !memberQ){ resultEl.innerHTML = '<b style="color:var(--overdue);">Member not found</b><span>Try an ID from the Members list, e.g. 590041182.</span>'; resultEl.classList.add('show'); return; }
+  if(availableCount(book)<=0){ resultEl.innerHTML = `<b style="color:var(--overdue);">No copies available</b><span>All ${book.total} copies of "${book.title}" are currently issued.</span>`; resultEl.classList.add('show'); return; }
+  DB.transactions.push({id:uid('T'), bookId:book.id, memberId:member.id, issueDate:new Date(), dueDate:daysFromNow(14), returnDate:null, status:'issued'});
+  resultEl.innerHTML = `<b>Issued: ${book.title}</b><span>To ${member.name} · due ${fmtDate(daysFromNow(14))}</span>`;
+  resultEl.classList.add('show');
+  showToast(`Issued "${book.title}" to ${member.name}`);
+  document.getElementById('issue-book-input').value=''; document.getElementById('issue-member-input').value='';
+  refreshAdminViews();
+}
+
+function processReturn(){
+  const txId = document.getElementById('return-select').value;
+  const resultEl = document.getElementById('return-result');
+  const t = DB.transactions.find(x=>x.id===txId);
+  if(!t){ resultEl.innerHTML = '<b style="color:var(--overdue);">Nothing to return</b><span>There are no active issues right now.</span>'; resultEl.classList.add('show'); return; }
+  t.status='returned'; t.returnDate = new Date();
+  const book = DB.books.find(b=>b.id===t.bookId);
+  resultEl.innerHTML = `<b>Returned: ${book.title}</b><span>Availability updated — ${availableCount(book)} of ${book.total} now on the shelf.</span>`;
+  resultEl.classList.add('show');
+  showToast(`"${book.title}" returned and marked available`);
+  refreshAdminViews();
+}
+
+function renderMembers(){
+  const q = (document.getElementById('admin-member-search').value||'').toLowerCase();
+  const rows = DB.members.filter(m=> !q || m.name.toLowerCase().includes(q) || m.id.toLowerCase().includes(q));
+  document.getElementById('admin-members-body').innerHTML = rows.map(m=>{
+    const held = DB.transactions.filter(t=>t.memberId===m.id && t.status==='issued').length;
+    return `<tr><td>${m.name}</td><td class="mono-id">${m.id}</td><td>${m.role}</td><td>${held}</td>
+      <td><span class="pill pill-available">${m.status}</span></td></tr>`;
+  }).join('');
+}
+
+function renderReports(){
+  const cats = [...new Set(DB.books.map(b=>b.category))];
+  const counts = cats.map(c=>DB.transactions.filter(t=>{
+    const book = DB.books.find(b=>b.id===t.bookId);
+    return book && book.category===c;
+  }).length || Math.floor(Math.random()*3));
+  const max = Math.max(...counts, 1);
+  document.getElementById('report-bar-chart').innerHTML = cats.map((c,i)=>
+    `<div class="bar-col"><div class="bar" style="height:${(counts[i]/max*140)+10}px;"></div><div class="bar-label">${c.split(' ')[0]}</div></div>`).join('');
+
+  const totalTitles = DB.books.length;
+  const lowStock = DB.books.filter(b=>availableCount(b) <= Math.ceil(b.total*0.2)).length;
+  const overdue = DB.transactions.filter(t=>txStatus(t)==='overdue').length;
+  const health = [
+    {label:'Titles in good/new condition', value: Math.round(DB.books.filter(b=>b.condition!=='Worn').length/totalTitles*100)},
+    {label:'Stock healthy (not low)', value: Math.round((totalTitles-lowStock)/totalTitles*100)},
+    {label:'Active issues on time', value: DB.transactions.filter(t=>t.status==='issued').length ? Math.round((1-(overdue/DB.transactions.filter(t=>t.status==='issued').length))*100) : 100},
+  ];
+  document.getElementById('report-health').innerHTML = health.map(h=>`
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span>${h.label}</span><b>${h.value}%</b></div>
+      <div class="stock-bar" style="width:100%;"><i style="width:${h.value}%"></i></div>
+    </div>`).join('');
+}
+
+function refreshAdminViews(){
+  populateCategoryFilters();
+  renderAdminStats();
+  renderAdminActivity();
+  renderAdminCatalogue();
+  renderInventory();
+  renderTransactionsTable();
+  populateReturnSelect();
+  renderMembers();
+  renderReports();
+}
+
+/* =========================================================
+   BOOK MODAL (add / edit)
+========================================================= */
+function openBookModal(bookId){
+  const modal = document.getElementById('book-modal');
+  document.getElementById('book-edit-id').value = bookId||'';
+  if(bookId){
+    const b = DB.books.find(x=>x.id===bookId);
+    document.getElementById('book-modal-title').textContent = 'Edit title';
+    document.getElementById('book-title').value = b.title;
+    document.getElementById('book-author').value = b.author;
+    document.getElementById('book-category').value = b.category;
+    document.getElementById('book-copies').value = b.total;
+    document.getElementById('book-shelf').value = b.shelf;
+    document.getElementById('book-condition').value = b.condition;
+  } else {
+    document.getElementById('book-modal-title').textContent = 'Add a title';
+    document.querySelector('#book-modal form').reset();
+    document.getElementById('book-copies').value = 1;
+  }
+  modal.classList.add('active');
+}
+function closeBookModal(){ document.getElementById('book-modal').classList.remove('active'); }
+function saveBook(e){
+  e.preventDefault();
+  const id = document.getElementById('book-edit-id').value;
+  const data = {
+    title: document.getElementById('book-title').value,
+    author: document.getElementById('book-author').value,
+    category: document.getElementById('book-category').value,
+    total: parseInt(document.getElementById('book-copies').value,10),
+    shelf: document.getElementById('book-shelf').value,
+    condition: document.getElementById('book-condition').value,
+  };
+  if(id){
+    Object.assign(DB.books.find(b=>b.id===id), data);
+    showToast(`Updated "${data.title}"`);
+  } else {
+    DB.books.push(Object.assign({id:uid('B'), isbn:'—'}, data));
+    showToast(`Added "${data.title}" to the catalogue`);
+  }
+  closeBookModal();
+  refreshAdminViews();
+  return false;
+}
+function deleteBook(bookId){
+  const b = DB.books.find(x=>x.id===bookId);
+  if(issuedCount(bookId)>0){ showToast(`Can't remove "${b.title}" — copies are currently issued`); return; }
+  DB.books = DB.books.filter(x=>x.id!==bookId);
+  showToast(`Removed "${b.title}" from the catalogue`);
+  refreshAdminViews();
+}
+document.getElementById('book-modal').addEventListener('click', (e)=>{ if(e.target.id==='book-modal') closeBookModal(); });
+
+/* =========================================================
+   THREE.JS — HERO "FANNED BOOKS" SCENE
+========================================================= */
+function initBookScene(canvasId, opts){
+  const canvas = document.getElementById(canvasId);
+  if(!canvas || !window.THREE) return;
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const wrap = canvas.parentElement;
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+  camera.position.set(0, 0.4, opts.camZ || 7.5);
+  const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+  function resize(){
+    const w = wrap.clientWidth, h = wrap.clientHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w/h; camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  const group = new THREE.Group();
+  scene.add(group);
+
+  const palette = [0xC9A227, 0x2C3E63, 0x5A2E44, 0x3B4A3A, 0x2E4A52, 0x5A4326, 0xE7C242, 0x4A3B5A];
+  const count = opts.count || 12;
+  const radius = opts.radius || 2.6;
+  const books = [];
+  for(let i=0;i<count;i++){
+    const angle = (i/count) * Math.PI * (opts.arc || 1.9) - (opts.arc||1.9)/2;
+    const geo = new THREE.BoxGeometry(0.9, 1.35, 0.16);
+    const color = palette[i % palette.length];
+    const mat = new THREE.MeshStandardMaterial({color, roughness:0.55, metalness:0.15});
+    const spineMat = new THREE.MeshStandardMaterial({color:0xEDEAE0, roughness:0.7});
+    const mats = [spineMat, spineMat, spineMat, spineMat, mat, mat];
+    const mesh = new THREE.Mesh(geo, mats);
+    mesh.position.set(Math.sin(angle)*radius, Math.cos(angle*0.6)*0.25, Math.cos(angle)*radius*0.5 - radius*0.5);
+    mesh.rotation.y = -angle*0.9;
+    mesh.userData.baseY = mesh.position.y;
+    mesh.userData.phase = i*0.7;
+    group.add(mesh);
+    books.push(mesh);
+  }
+
+  const ambient = new THREE.AmbientLight(0xffffff, 0.55);
+  scene.add(ambient);
+  const key = new THREE.DirectionalLight(0xffe9b0, 1.1);
+  key.position.set(3,4,5);
+  scene.add(key);
+  const rim = new THREE.PointLight(0xC9A227, 0.8, 20);
+  rim.position.set(-3,-1,3);
+  scene.add(rim);
+
+  let mouseX=0, mouseY=0;
+  wrap.addEventListener('mousemove', (e)=>{
+    const r = wrap.getBoundingClientRect();
+    mouseX = ((e.clientX - r.left)/r.width - 0.5);
+    mouseY = ((e.clientY - r.top)/r.height - 0.5);
+  });
+
+  const clock = new THREE.Clock();
+  function animate(){
+    requestAnimationFrame(animate);
+    const t = clock.getElapsedTime();
+    if(!reduceMotion){
+      group.rotation.y += (mouseX*0.6 - group.rotation.y*0.15) * 0.02;
+      group.rotation.x += ((-mouseY*0.25) - group.rotation.x*0.15) * 0.02;
+      books.forEach(b=>{ b.position.y = b.userData.baseY + Math.sin(t*0.8 + b.userData.phase)*0.05; });
+      group.rotation.y += 0.0012;
+    }
+    renderer.render(scene, camera);
+  }
+  animate();
+}
+
+initBookScene('hero-canvas', {count:12, radius:2.6, arc:2.1, camZ:7.5});
+initBookScene('login-canvas', {count:7, radius:1.9, arc:1.6, camZ:6});
+
+/* =========================================================
+   INIT
+========================================================= */
+populateCategoryFilters();
+</script>
+</body>
+</html>
