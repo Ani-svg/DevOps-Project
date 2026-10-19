@@ -28,46 +28,53 @@ const db = mysql.createConnection({
 
 // --- Authentication ---
 // --- Authentication ---
+// --- Authentication (WITH DEBUGGING) ---
 app.post('/api/login', async (req, res) => {
+    console.log('--- LOGIN ATTEMPT RECEIVED ---');
+    console.log('1. Received request body:', req.body); // Log everything we received
+
     const { role, id, password, institution_code } = req.body;
     
-    // Basic validation
     if (!id || !password || !role) {
+        console.log('Error: Missing required fields.');
         return res.status(400).json({ success: false, message: 'Missing required fields.' });
     }
 
     try {
-        // Find the user by their ID and role
         const [rows] = await db.query('SELECT * FROM members WHERE id = ? AND role = ?', [id, role]);
 
-        // If no user is found
         if (rows.length === 0) {
+            console.log('2. Database lookup FAILED. No user found for ID:', id, 'and Role:', role);
             return res.status(401).json({ success: false, message: 'Invalid credentials or role.' });
         }
 
         const user = rows[0];
+        console.log('2. Database lookup SUCCESS. User found:', user.id, user.name);
 
-        // For staff, also verify the institution code
         if (role === 'Staff' && user.institution_code !== institution_code) {
+            console.log('3. Institution code MISMATCH. Expected:', user.institution_code, 'Received:', institution_code);
             return res.status(401).json({ success: false, message: 'Invalid institution code.' });
         }
-
-        // Securely compare the submitted password with the stored hash
+        
+        console.log('3. Comparing submitted password with stored hash...');
         const isMatch = await bcrypt.compare(password, user.password_hash);
+        
+        console.log('4. Password comparison result (isMatch):', isMatch);
 
         if (isMatch) {
-            // Passwords match! Send success response (omitting password hash)
+            console.log('5. SUCCESS: Login granted.');
             const { password_hash, ...user_info } = user;
             res.json({ success: true, message: 'Login successful', user: user_info });
         } else {
-            // Passwords do not match
+            console.log('5. FAILURE: Passwords do not match.');
             res.status(401).json({ success: false, message: 'Invalid credentials.' });
         }
     } catch (error) {
-        console.error('Login error:', error);
+        console.error('CRITICAL LOGIN ERROR:', error);
         res.status(500).json({ success: false, message: 'An internal server error occurred.' });
     }
 });
+
 
 
 
