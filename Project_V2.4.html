@@ -642,7 +642,7 @@ tbody tr:hover{background:rgba(255,255,255,0.02);}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg> Notices</button>
       </nav>
       <div class="dash-user">
-        <div class="who"><div class="avatar">AM</div><div><b>Aarav Mehta</b><span>Enrollment 590041182</span></div></div>
+        <div class="who"><div class="avatar">AM</div><div><b>Anmol Malhotra</b><span>Enrollment 590023097</span></div></div>
         <button class="btn btn-ghost btn-sm btn-block" onclick="showView('landing')">Log out</button>
       </div>
     </aside>
@@ -890,21 +890,24 @@ function selectRole(role){
 
 async function doLogin(e, role) {
     e.preventDefault(); // Prevent the form from reloading the page
+    const form = e.target; // Get the specific form that was submitted
 
     let payload = { role };
 
-    // Get data from the correct form using specific IDs for both roles
+    // Get data directly from the form that triggered the event
     if (role === 'student') {
-        payload.id = document.getElementById('student-id').value;
-        payload.password = document.getElementById('student-password').value;
+        payload.id = form.querySelector('#student-id').value;
+        payload.password = form.querySelector('#student-password').value;
     } else { // staff
-        payload.id = document.getElementById('staff-id').value;
-        payload.institution_code = document.getElementById('institution-code').value;
-        payload.password = document.getElementById('staff-password').value;
+        payload.id = form.querySelector('#staff-id').value;
+        payload.institution_code = form.querySelector('#institution-code').value;
+        payload.password = form.querySelector('#staff-password').value;
     }
+    // ADD THIS DEBUGGING LINE
+    console.log('Frontend: About to send this payload to the server:', payload);
     
     try {
-        // Send data to the backend API
+        // Send the collected data to the backend
         const response = await fetch('http://localhost:3000/api/login', {
             method: 'POST',
             headers: {
@@ -915,9 +918,9 @@ async function doLogin(e, role) {
 
         const result = await response.json();
 
-        // Handle the response from the server
+        // Handle the server's response
         if (response.ok && result.success) {
-            // If login is successful, proceed with the UI transition
+            // SUCCESS: Proceed with login animation
             const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
             if (reduceMotion) {
                 showToast(role === 'student' ? 'Signed in as a student' : 'Signed in as staff');
@@ -926,7 +929,7 @@ async function doLogin(e, role) {
                 enterDive(role);
             }
         } else {
-            // If login fails, show the specific error message from the backend
+            // FAILURE: Show the error message from the backend
             showToast(result.message || 'Login failed. Please check your credentials.');
         }
     } catch (error) {
@@ -989,15 +992,31 @@ countUp(document.getElementById('stat-copies'), 38900, 1600);
 /* =========================================================
    CATEGORY OPTIONS
 ========================================================= */
-function populateCategoryFilters(){
-  const cats = [...new Set(DB.books.map(b=>b.category))].sort();
-  ['student-cat-filter','admin-cat-filter'].forEach(id=>{
-    const sel = document.getElementById(id);
-    const current = sel.value;
-    sel.innerHTML = sel.querySelector('option').outerHTML + cats.map(c=>`<option value="${c}">${c}</option>`).join('');
-    sel.value = current;
-  });
+// THIS IS THE CORRECTED FUNCTION
+async function populateCategoryFilters() {
+    try {
+        // Fetch the book list from our backend API
+        const response = await fetch('http://localhost:3000/api/catalogue');
+        if (!response.ok) throw new Error('Failed to fetch categories from server');
+        const books = await response.json();
+
+        // Create a unique, sorted list of categories from the fetched data
+        const cats = [...new Set(books.map(b => b.category))].filter(Boolean).sort();
+
+        // Populate both the student and admin filter dropdowns
+        ['student-cat-filter', 'admin-cat-filter'].forEach(id => {
+            const sel = document.getElementById(id);
+            if (sel) { // Check if the element exists before trying to modify it
+                const currentVal = sel.value;
+                sel.innerHTML = sel.querySelector('option').outerHTML + cats.map(c => `<option value="${c}">${c}</option>`).join('');
+                sel.value = currentVal;
+            }
+        });
+    } catch (error) {
+        console.error("Could not populate category filters:", error);
+    }
 }
+
 
 /* =========================================================
    STUDENT VIEW RENDERING
