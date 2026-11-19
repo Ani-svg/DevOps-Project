@@ -1,0 +1,80 @@
+services:
+
+  backend-blue:
+    build:
+      context: ./backend
+    container_name: granthalaya-backend-blue
+    restart: unless-stopped
+
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://localhost:3000/api/public/stats').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    networks:
+      - granthalaya-network
+
+  backend-green:
+    build:
+      context: ./backend
+    container_name: granthalaya-backend-green
+    restart: unless-stopped
+
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://localhost:3000/api/public/stats').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    networks:
+      - granthalaya-network
+
+  nginx-bluegreen:
+    image: nginx:alpine
+    container_name: granthalaya-nginx-bluegreen
+    restart: unless-stopped
+
+    ports:
+      - "8082:80"
+
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./nginx/bluegreen.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/active-backend.conf:/etc/nginx/active-backend.conf:ro
+
+    depends_on:
+      backend-blue:
+        condition: service_healthy
+      backend-green:
+        condition: service_healthy
+
+    networks:
+      - granthalaya-network
+
+networks:
+  granthalaya-network:
+    external: true
+    name: devops-project_default
