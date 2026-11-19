@@ -1,0 +1,72 @@
+name: Granthalaya CI Pipeline
+
+on:
+  push:
+    branches:
+      - docker-setup
+      - main
+      - production
+
+  pull_request:
+    branches:
+      - main
+      - production
+
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check Docker installation
+        run: docker --version
+
+      - name: Configure test environment
+        run: |
+          cat > .env <<'EOF'
+          MYSQL_ROOT_PASSWORD=ci_root_password
+          MYSQL_DATABASE=granthalaya
+          MYSQL_USER=granthalaya_app
+          MYSQL_PASSWORD=ci_app_password
+          DB_HOST=mysql
+          DB_PORT=3306
+          DB_NAME=granthalaya
+          DB_USER=granthalaya_app
+          DB_PASSWORD=ci_app_password
+          EOF
+
+      - name: Build Docker containers
+        run: docker compose up -d --build
+
+      - name: Wait for application
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://localhost:8081/api/public/stats; then
+              echo "Application is ready"
+              exit 0
+            fi
+            echo "Waiting for application..."
+            sleep 5
+          done
+
+          docker compose logs
+          exit 1
+
+      - name: Run automated API tests
+        run: |
+          docker compose run --rm --no-deps \
+            -v "${GITHUB_WORKSPACE}/backend:/tests:ro" \
+            -w /tests \
+            -e API_BASE_URL=http://nginx \
+            backend node --test
+
+      - name: Verify containers
+        run: docker compose ps
+
+      - name: Cleanup
+        if: always()
+        run: docker compose down
