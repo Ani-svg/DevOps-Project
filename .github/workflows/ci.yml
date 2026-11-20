@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - docker-setup
-      - main
-      - production
 
   pull_request:
     branches:
@@ -15,11 +13,9 @@ on:
   workflow_dispatch:
 
 jobs:
-
-  # ---------------- CI: BUILD AND TEST ----------------
-
   build-and-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Checkout repository
@@ -30,7 +26,7 @@ jobs:
 
       - name: Configure test environment
         run: |
-          cat > .env <<'EOF'
+          cat > .env <<'ENVEOF'
           MYSQL_ROOT_PASSWORD=ci_root_password
           MYSQL_DATABASE=granthalaya
           MYSQL_USER=granthalaya_app
@@ -40,7 +36,7 @@ jobs:
           DB_NAME=granthalaya
           DB_USER=granthalaya_app
           DB_PASSWORD=ci_app_password
-          EOF
+          ENVEOF
 
       - name: Build Docker containers
         run: docker compose up -d --build
@@ -74,43 +70,3 @@ jobs:
       - name: Cleanup
         if: always()
         run: docker compose down
-
-
-  # ---------------- CD: BLUE-GREEN DEPLOYMENT ----------------
-
-  deploy:
-    name: Blue-Green Deployment
-
-    needs: build-and-test
-
-    if: >-
-      github.ref == 'refs/heads/docker-setup' &&
-      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
-
-    runs-on: [self-hosted, linux, x64]
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Check Docker installation
-        run: docker --version
-
-      - name: Verify runtime configuration
-        run: |
-          test -f /home/aniket/DevOps-Project/nginx/active-backend.conf
-          echo "Runtime Nginx configuration found."
-
-      - name: Make deployment script executable
-        run: chmod +x scripts/deploy-bluegreen.sh
-
-      - name: Deploy using Blue-Green strategy
-        env:
-          DB_HOST: ${{ secrets.GRANTHALAYA_DB_HOST }}
-          DB_PORT: ${{ secrets.GRANTHALAYA_DB_PORT }}
-          DB_NAME: ${{ secrets.GRANTHALAYA_DB_NAME }}
-          DB_USER: ${{ secrets.GRANTHALAYA_DB_USER }}
-          DB_PASSWORD: ${{ secrets.GRANTHALAYA_DB_PASSWORD }}
-          ACTIVE_CONFIG_PATH: /home/aniket/DevOps-Project/nginx/active-backend.conf
-
-        run: ./scripts/deploy-bluegreen.sh
