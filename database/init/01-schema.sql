@@ -1,4 +1,5 @@
-CREATE DATABASE granthalaya;
+-- Granthalaya database — CLEAN version: real library collection, no demo loans/requests.
+-- Plain-text passwords (learning use only).
 USE granthalaya;
 
 CREATE TABLE members (
@@ -19,7 +20,8 @@ CREATE TABLE books (
     category VARCHAR(100),
     total_copies INT DEFAULT 1,
     shelf_location VARCHAR(50),
-    condition_status ENUM('New', 'Good', 'Worn') DEFAULT 'Good'
+    condition_status ENUM('New', 'Good', 'Worn') DEFAULT 'Good',
+    added_on DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE transactions (
@@ -34,6 +36,15 @@ CREATE TABLE transactions (
     fine INT DEFAULT 0,
     FOREIGN KEY (book_id) REFERENCES books(id),
     FOREIGN KEY (member_id) REFERENCES members(id)
+);
+
+CREATE TABLE wishlist (
+    member_id VARCHAR(255) NOT NULL,
+    book_id VARCHAR(255) NOT NULL,
+    added_on DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (member_id, book_id),
+    FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE,
+    FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE
 );
 
 CREATE TABLE book_requests (
@@ -222,6 +233,9 @@ INSERT INTO books (id, title, author, category, total_copies, shelf_location) VA
 ('B-0160','CRC Handbook of Chemistry and Physics','John R. Rumble (Ed.)','Reference',2,'RF-1D'),
 ('B-0161','Marks'' Standard Handbook for Mechanical Engineers','Eugene Avallone et al.','Reference',5,'RF-1E'),
 ('B-0162','Perry''s Chemical Engineers'' Handbook','Don W. Green & Marylee Southard','Reference',4,'RF-1F');
+
+-- Existing collection counts as added 60 days ago, so only titles staff add later show a NEW badge.
+UPDATE books SET added_on = NOW() - INTERVAL 60 DAY;
 
 -- No sample loans or requests: issue, return, request and renew everything yourself.
 

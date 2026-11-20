@@ -15,8 +15,14 @@ const LOAN_DAYS = 14, RENEW_DAYS = 7, MAX_ACTIVE = 5, FINE_PER_DAY = 2; // fine 
 
 // ---------- Database ----------
 const db = mysql.createPool({
-  host: 'localhost', user: 'root', password: 'mysql062007', database: 'granthalaya',
-  dateStrings: true, waitForConnections: true, connectionLimit: 10
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'granthalaya',
+  port: Number(process.env.DB_PORT || 3306),
+  dateStrings: true,
+  waitForConnections: true,
+  connectionLimit: 10
 }).promise();
 db.query('SELECT 1').then(() => console.log('MySQL connected to "granthalaya"'))
   .catch(e => console.error('MySQL connection FAILED:', e.message));
