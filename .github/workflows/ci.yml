@@ -1,4 +1,4 @@
-name: Granthalaya CI Pipeline
+name: Granthalaya CI/CD Pipeline
 
 on:
   push:
@@ -14,26 +14,39 @@ on:
 
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
+
+  # =========================================
+  # CI: BUILD AND AUTOMATED TESTING
+  # =========================================
+
   build-and-test:
+    name: Build and Test Application
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
-      - name: Checkout repository
+      - name: Checkout production source
         uses: actions/checkout@v4
 
       - name: Check Docker installation
         run: docker --version
 
       - name: Validate CI Docker Compose
-        run: docker compose -p granthalaya-ci -f docker-compose.ci.yml config
+        run: |
+          docker compose -p granthalaya-ci \
+            -f docker-compose.ci.yml config --quiet
 
-      - name: Build application and run automated tests
+      - name: Build application and run four API tests
         run: |
           docker compose -p granthalaya-ci \
             -f docker-compose.ci.yml \
-            up --build --abort-on-container-exit --exit-code-from tests
+            up --build \
+            --abort-on-container-exit \
+            --exit-code-from tests
 
       - name: Show container status
         if: always()
@@ -46,3 +59,122 @@ jobs:
         run: |
           docker compose -p granthalaya-ci \
             -f docker-compose.ci.yml down
+
+
+  # =========================================
+  # CD: PRODUCTION BLUE-GREEN DEPLOYMENT
+  # =========================================
+
+  deploy:
+    name: Blue-Green Production Deployment
+
+    needs: build-and-test
+
+    if: >-
+      github.ref == 'refs/heads/production' &&
+      (github.event_name == 'push' ||
+       github.event_name == 'workflow_dispatch')
+
+    runs-on: [self-hosted, linux, x64]
+    timeout-minutes: 25
+
+    concurrency:
+      group: granthalaya-production-deployment
+      cancel-in-progress: false
+
+    steps:
+
+      # -------------------------------------
+      # Checkout production application
+      # -------------------------------------
+
+      - name: Checkout production application
+        uses: actions/checkout@v4
+        with:
+          ref: production
+          path: application
+
+      # -------------------------------------
+      # Checkout deployment infrastructure
+      # -------------------------------------
+
+      - name: Checkout Docker and deployment infrastructure
+        uses: actions/checkout@v4
+        with:
+          ref: docker-setup
+          path: infrastructure
+
+      # -------------------------------------
+      # Verify runner and deployment setup
+      # -------------------------------------
+
+      - name: Check Docker installation
+        run: docker --version
+
+      - name: Verify deployment prerequisites
+        env:
+          DB_HOST: ${{ secrets.GRANTHALAYA_DB_HOST }}
+          DB_PORT: ${{ secrets.GRANTHALAYA_DB_PORT }}
+          DB_NAME: ${{ secrets.GRANTHALAYA_DB_NAME }}
+          DB_USER: ${{ secrets.GRANTHALAYA_DB_USER }}
+          DB_PASSWORD: ${{ secrets.GRANTHALAYA_DB_PASSWORD }}
+
+        run: |
+          echo "Checking production application..."
+
+          test -f "$GITHUB_WORKSPACE/application/backend/Dockerfile"
+          test -f "$GITHUB_WORKSPACE/application/backend/tests/api.test.js"
+          test -f "$GITHUB_WORKSPACE/application/frontend/index.html"
+
+          echo "Checking deployment infrastructure..."
+
+          test -f "$GITHUB_WORKSPACE/infrastructure/docker-compose.bluegreen.yml"
+          test -f "$GITHUB_WORKSPACE/infrastructure/scripts/deploy-bluegreen.sh"
+
+          echo "Checking runtime configuration..."
+
+          test -f /home/aniket/DevOps-Project/.env
+          test -f /home/aniket/DevOps-Project/nginx/active-backend.conf
+          test -d /home/aniket/DevOps-Project/frontend
+
+          echo "Checking GitHub Secrets..."
+
+          test -n "$DB_HOST"
+          test -n "$DB_PORT"
+          test -n "$DB_NAME"
+          test -n "$DB_USER"
+          test -n "$DB_PASSWORD"
+
+          echo "Checking Docker network..."
+
+          docker network inspect devops-project_default >/dev/null
+
+          echo "Checking Nginx container..."
+
+          docker inspect granthalaya-nginx-bluegreen >/dev/null
+
+          echo "All deployment prerequisites passed."
+
+      # -------------------------------------
+      # Execute Blue-Green deployment
+      # -------------------------------------
+
+      - name: Make deployment script executable
+        run: chmod +x infrastructure/scripts/deploy-bluegreen.sh
+
+      - name: Deploy production application
+        working-directory: infrastructure
+        env:
+          APP_DIR: ${{ github.workspace }}/application
+          RUNTIME_FRONTEND_DIR: /home/aniket/DevOps-Project/frontend
+
+          ENV_FILE_PATH: /home/aniket/DevOps-Project/.env
+          ACTIVE_CONFIG_PATH: /home/aniket/DevOps-Project/nginx/active-backend.conf
+
+          DB_HOST: ${{ secrets.GRANTHALAYA_DB_HOST }}
+          DB_PORT: ${{ secrets.GRANTHALAYA_DB_PORT }}
+          DB_NAME: ${{ secrets.GRANTHALAYA_DB_NAME }}
+          DB_USER: ${{ secrets.GRANTHALAYA_DB_USER }}
+          DB_PASSWORD: ${{ secrets.GRANTHALAYA_DB_PASSWORD }}
+
+        run: ./scripts/deploy-bluegreen.sh
