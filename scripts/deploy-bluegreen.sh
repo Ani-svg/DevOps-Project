@@ -11,7 +11,7 @@ PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_DIR"
 
 COMPOSE_FILE="docker-compose.bluegreen.yml"
-ACTIVE_CONFIG="nginx/active-backend.conf"
+ACTIVE_CONFIG="${ACTIVE_CONFIG_PATH:-nginx/active-backend.conf}"
 
 NGINX_CONTAINER="granthalaya-nginx-bluegreen"
 

@@ -7,3 +7,6 @@
 # Node.js
 node_modules/
 npm-debug.log
+
+# Runtime Blue-Green deployment state
+nginx/active-backend.conf
