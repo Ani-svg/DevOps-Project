@@ -3,9 +3,9 @@ name: Granthalaya CI Pipeline
 on:
   push:
     branches:
-      - docker-setup
       - main
       - production
+      - release-v4-cleanup
 
   pull_request:
     branches:
@@ -17,6 +17,7 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout repository
@@ -25,48 +26,23 @@ jobs:
       - name: Check Docker installation
         run: docker --version
 
-      - name: Configure test environment
+      - name: Validate CI Docker Compose
+        run: docker compose -p granthalaya-ci -f docker-compose.ci.yml config
+
+      - name: Build application and run automated tests
         run: |
-          cat > .env <<'EOF'
-          MYSQL_ROOT_PASSWORD=ci_root_password
-          MYSQL_DATABASE=granthalaya
-          MYSQL_USER=granthalaya_app
-          MYSQL_PASSWORD=ci_app_password
-          DB_HOST=mysql
-          DB_PORT=3306
-          DB_NAME=granthalaya
-          DB_USER=granthalaya_app
-          DB_PASSWORD=ci_app_password
-          EOF
+          docker compose -p granthalaya-ci \
+            -f docker-compose.ci.yml \
+            up --build --abort-on-container-exit --exit-code-from tests
 
-      - name: Build Docker containers
-        run: docker compose up -d --build
-
-      - name: Wait for application
-        run: |
-          for i in {1..30}; do
-            if curl -fsS http://localhost:8081/api/public/stats; then
-              echo "Application is ready"
-              exit 0
-            fi
-            echo "Waiting for application..."
-            sleep 5
-          done
-
-          docker compose logs
-          exit 1
-
-      - name: Run automated API tests
-        run: |
-          docker compose run --rm --no-deps \
-            -v "${GITHUB_WORKSPACE}/backend:/tests:ro" \
-            -w /tests \
-            -e API_BASE_URL=http://nginx \
-            backend node --test
-
-      - name: Verify containers
-        run: docker compose ps
-
-      - name: Cleanup
+      - name: Show container status
         if: always()
-        run: docker compose down
+        run: |
+          docker compose -p granthalaya-ci \
+            -f docker-compose.ci.yml ps -a
+
+      - name: Cleanup CI containers
+        if: always()
+        run: |
+          docker compose -p granthalaya-ci \
+            -f docker-compose.ci.yml down
